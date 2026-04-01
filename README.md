@@ -1,83 +1,55 @@
-# 🏗 Scaffold-ETH 2
+# 🏦 ₸USD - Treasury Manager v2
 
-<h4 align="center">
-  <a href="https://docs.scaffoldeth.io">Documentation</a> |
-  <a href="https://scaffoldeth.io">Website</a>
-</h4>
+## Operated by AMI (Artificial Monetary Intelligence)
 
-🧪 An open-source, up-to-date toolkit for building decentralized applications (dapps) on the Ethereum blockchain. It's designed to make it easier for developers to create and deploy smart contracts and build user interfaces that interact with those contracts.
+TreasuryManager v2 is an onchain treasury management contract for ₸USD (TurboUSD) on Base. The contract enforces strict one-directional token flows: tokens are accumulated into the treasury, ₸USD can only be bought, staked, or burned — never sold.
 
-> [!NOTE]
-> 🤖 Scaffold-ETH 2 is AI-ready! It has everything agents need to build on Ethereum. Check `.agents/`, `.claude/`, `.opencode` or `.cursor/` for more info.
+A permissionless fallback mechanism guarantees ₸USD buybacks will continue even if the operator goes offline, ensuring treasury funds are never stuck and the protocol's monetary policy remains active under all circumstances.
 
-⚙️ Built using NextJS, RainbowKit, Foundry, Wagmi, Viem, and Typescript.
+## Features
 
-- ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
-- 🪝 **[Custom hooks](https://docs.scaffoldeth.io/hooks/)**: Collection of React hooks wrapper around [wagmi](https://wagmi.sh/) to simplify interactions with smart contracts with typescript autocompletion.
-- 🧱 [**Components**](https://docs.scaffoldeth.io/components/): Collection of common web3 components to quickly build your frontend.
-- 🔥 **Burner Wallet & Local Faucet**: Quickly test your application with a burner wallet and local faucet.
-- 🔐 **Integration with Wallet Providers**: Connect to different wallet providers and interact with the Ethereum network.
+- **Operator-controlled buybacks** — WETH → ₸USD and USDC → WETH → ₸USD via Uniswap
+- **Token accumulation** — Buy any ERC20 with ETH via Universal Router (V3 + V4)
+- **Permissionless rebalance** — Anyone can trigger rebalances when ROI thresholds are met and operator is inactive
+- **Staking integration** — Stake/unstake ₸USD to staking contract
+- **Burn mechanism** — Partial ₸USD burns with operator caps
+- **Circuit breaker** — Blocks swaps when spot price deviates >15% from 24h TWAP
+- **Dead pool rescue** — Owner can rescue tokens from dead pools after 90 days
 
-![Debug Contracts tab](https://github.com/scaffold-eth/scaffold-eth-2/assets/55535804/b237af0c-5027-4849-a5c1-2e31495cccb1)
+## Architecture
 
-## Requirements
+- **Network:** Base (Chain ID 8453)
+- **Contracts:** Foundry (Solidity 0.8.26+)
+- **Frontend:** Next.js via Scaffold-ETH 2
+- **Dependencies:** OpenZeppelin (Ownable2Step, ReentrancyGuard), Uniswap Universal Router + V3 Pool
 
-Before you begin, you need to install the following tools:
+## Contract Addresses (Base)
 
-- [Node (>= v20.18.3)](https://nodejs.org/en/download/)
-- Yarn ([v1](https://classic.yarnpkg.com/en/docs/install/) or [v2+](https://yarnpkg.com/getting-started/install))
-- [Git](https://git-scm.com/downloads)
+| Contract | Address |
+|----------|---------|
+| WETH | `0x4200000000000000000000000000000000000006` |
+| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+| ₸USD | `0x0c03Ce270B4826Ec62e7DD007f0B716068639F7B` |
+| Universal Router | `0x6fF5693b99212Da76ad316178A184AB56D299b43` |
+| PoolManager (V4) | `0x498581ff718922c3f8e6a244956af099b2652b2b` |
+| ₸USD Staking | `0x2a70a42BC0524aBCA9Bff59a51E7aAdB575DC89A` |
 
-## Quickstart
+## Development
 
-To get started with Scaffold-ETH 2, follow the steps below:
-
-1. Install dependencies if it was skipped in CLI:
-
-```
-cd my-dapp-example
+```bash
+# Install dependencies
 yarn install
-```
 
-2. Run a local network in the first terminal:
+# Start local fork
+yarn fork --network base
 
-```
-yarn chain
-```
-
-This command starts a local Ethereum network using Foundry. The network runs on your local machine and can be used for testing and development. You can customize the network configuration in `packages/foundry/foundry.toml`.
-
-3. On a second terminal, deploy the test contract:
-
-```
+# Deploy contracts
 yarn deploy
-```
 
-This command deploys a test smart contract to the local network. The contract is located in `packages/foundry/contracts` and can be modified to suit your needs. The `yarn deploy` command uses the deploy script located in `packages/foundry/script` to deploy the contract to the network. You can also customize the deploy script.
-
-4. On a third terminal, start your NextJS app:
-
-```
+# Start frontend
 yarn start
 ```
 
-Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
+## License
 
-Run smart contract test with `yarn foundry:test`
-
-- Edit your smart contracts in `packages/foundry/contracts`
-- Edit your frontend homepage at `packages/nextjs/app/page.tsx`. For guidance on [routing](https://nextjs.org/docs/app/building-your-application/routing/defining-routes) and configuring [pages/layouts](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts) checkout the Next.js documentation.
-- Edit your deployment scripts in `packages/foundry/script`
-
-
-## Documentation
-
-Visit our [docs](https://docs.scaffoldeth.io) to learn how to start building with Scaffold-ETH 2.
-
-To know more about its features, check out our [website](https://scaffoldeth.io).
-
-## Contributing to Scaffold-ETH 2
-
-We welcome contributions to Scaffold-ETH 2!
-
-Please see [CONTRIBUTING.MD](https://github.com/scaffold-eth/scaffold-eth-2/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-ETH 2.
+MIT
