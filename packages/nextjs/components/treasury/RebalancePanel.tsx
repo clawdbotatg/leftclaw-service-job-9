@@ -2,18 +2,28 @@
 
 import { useState } from "react";
 import { parseEther } from "viem";
-import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useAccount } from "wagmi";
+import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 export const RebalancePanel = () => {
   const [token, setToken] = useState("");
   const [amount, setAmount] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const { address: connectedAddress } = useAccount();
+
+  const { data: operator } = useScaffoldReadContract({
+    contractName: "TreasuryManagerV2",
+    functionName: "operator",
+  });
+
+  const isOperator = connectedAddress && operator && connectedAddress.toLowerCase() === String(operator).toLowerCase();
 
   const { writeContractAsync, isMining } = useScaffoldWriteContract("TreasuryManagerV2");
 
   const handleRebalance = async () => {
     if (!token || !amount) return;
-    // For prototype, use placeholder paths
-    // In production, the AI agent would compute optimal paths
+    setError(null);
     const WETH = "0x4200000000000000000000000000000000000006";
     const USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
@@ -33,10 +43,38 @@ export const RebalancePanel = () => {
         ],
       });
       setAmount("");
-    } catch (e) {
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Transaction failed";
+      if (msg.includes("NotOperator")) setError("Not authorized.");
+      else if (msg.includes("ExceedsPerActionCap")) setError("Exceeds per-action cap.");
+      else if (msg.includes("CooldownNotElapsed")) setError("Cooldown active. Wait 60 minutes.");
+      else if (msg.includes("User rejected")) setError("Transaction cancelled.");
+      else setError("Rebalance failed. Check console for details.");
       console.error("Rebalance failed:", e);
     }
   };
+
+  if (!connectedAddress) {
+    return (
+      <div className="card bg-base-200 shadow-xl">
+        <div className="card-body">
+          <h2 className="card-title text-xl">⚖️ Rebalance</h2>
+          <p className="text-sm text-base-content/60">Connect wallet to rebalance.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isOperator) {
+    return (
+      <div className="card bg-base-200 shadow-xl">
+        <div className="card-body">
+          <h2 className="card-title text-xl">⚖️ Rebalance</h2>
+          <p className="text-sm text-warning">⚠️ Connected wallet is not the operator.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card bg-base-200 shadow-xl">
@@ -54,7 +92,10 @@ export const RebalancePanel = () => {
               placeholder="0x..."
               className="input input-bordered w-full font-mono text-sm"
               value={token}
-              onChange={e => setToken(e.target.value)}
+              onChange={e => {
+                setToken(e.target.value);
+                setError(null);
+              }}
               disabled={isMining}
             />
           </div>
@@ -70,7 +111,10 @@ export const RebalancePanel = () => {
                 placeholder="Token amount"
                 className="input input-bordered flex-1"
                 value={amount}
-                onChange={e => setAmount(e.target.value)}
+                onChange={e => {
+                  setAmount(e.target.value);
+                  setError(null);
+                }}
                 disabled={isMining}
               />
               <button
@@ -78,10 +122,11 @@ export const RebalancePanel = () => {
                 onClick={handleRebalance}
                 disabled={isMining || !token || !amount}
               >
-                {isMining ? "⏳" : "Rebalance"}
+                {isMining ? "⏳ Rebalancing..." : "Rebalance"}
               </button>
             </div>
           </div>
+          {error && <p className="text-error text-sm mt-1">{error}</p>}
         </div>
       </div>
     </div>

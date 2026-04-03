@@ -1,4 +1,3 @@
-
 import "@rainbow-me/rainbowkit/styles.css";
 import "@scaffold-ui/components/styles.css";
 import { ScaffoldEthAppWithProviders } from "~~/components/ScaffoldEthAppWithProviders";
@@ -6,10 +5,10 @@ import { ThemeProvider } from "~~/components/ThemeProvider";
 import "~~/styles/globals.css";
 import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
-
 export const metadata = getMetadata({
-  title: 'Scaffold-ETH 2 App',
-  description: 'Built with 🏗 Scaffold-ETH 2'
+  title: "₸USD Treasury Manager",
+  description:
+    "Onchain treasury management for ₸USD on Base — buybacks, burns, staking, and strategic rebalancing powered by AMI.",
 });
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {

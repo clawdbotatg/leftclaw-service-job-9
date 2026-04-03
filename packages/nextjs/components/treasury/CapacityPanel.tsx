@@ -1,5 +1,6 @@
 "use client";
 
+import { Address } from "@scaffold-ui/components";
 import { formatEther, formatUnits } from "viem";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
@@ -51,11 +52,9 @@ export const CapacityPanel = () => {
         <h2 className="card-title text-xl">📊 Capacity & Status</h2>
 
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span>Operator:</span>
-            <span className="font-mono text-xs">
-              {operator ? `${String(operator).slice(0, 6)}...${String(operator).slice(-4)}` : "Not set"}
-            </span>
+            <span>{operator ? <Address address={operator as `0x${string}`} /> : "Not set"}</span>
           </div>
 
           <div className="divider my-1"></div>
