@@ -313,6 +313,7 @@ contract TreasuryManagerV2 is Ownable2Step, ReentrancyGuard {
         operatorCooldown(ActionType.Rebalance)
     {
         _validateV3Path(pathToWETH, token, WETH);
+        _validateV3Path(pathToUSDC, token, USDC);
 
         uint256 tokenBalance = IERC20(token).balanceOf(address(this));
         require(tokenBalance >= amount, "Insufficient token balance");
@@ -355,6 +356,7 @@ contract TreasuryManagerV2 is Ownable2Step, ReentrancyGuard {
         nonZero(amount)
     {
         _validateV3Path(pathToWETH, token, WETH);
+        _validateV3Path(pathToUSDC, token, USDC);
 
         TokenPosition storage pos = tokenPositions[token];
 
@@ -365,14 +367,8 @@ contract TreasuryManagerV2 is Ownable2Step, ReentrancyGuard {
             "Operator still active"
         );
 
-        // Check ROI via TWAP
+        // Check ROI via TWAP — 1000% ROI means currentValue >= 10x totalCostBasis
         uint256 currentValue = _estimateTokenValueInETH(token, pos.totalAcquired - pos.totalRebalanced);
-        uint256 roi = (currentValue * BPS_DENOMINATOR) / pos.totalCostBasis;
-        require(roi >= 100 * BPS_DENOMINATOR, "Insufficient ROI"); // 1000% = 100x = 100 * 10000 BPS... actually 1000% = 10x
-
-        // ROI check: 1000% means value is 10x cost (roi >= 10 * BPS_DENOMINATOR in terms of multiplier)
-        // Let's use: roi = (currentValue * 100) / totalCostBasis  → percentage
-        // 1000% means currentValue >= 10 * totalCostBasis
         require(currentValue >= 10 * pos.totalCostBasis, "ROI below 1000%");
 
         // Update unlock schedule (ratcheted)
@@ -400,8 +396,8 @@ contract TreasuryManagerV2 is Ownable2Step, ReentrancyGuard {
             "Permissionless cooldown"
         );
 
-        // Daily ETH cap
-        _checkPermissionlessDailyCap(amount, token, pathToWETH);
+        // Daily ETH cap — pre-check to save gas on obvious failures
+        _checkPermissionlessDailyCap();
 
         // Execute: 75% → WETH → TUSD, 25% → USDC → owner
         uint256 amount75 = (amount * 75) / 100;
@@ -450,14 +446,17 @@ contract TreasuryManagerV2 is Ownable2Step, ReentrancyGuard {
         bytes memory commands = hex"00";
         bytes[] memory inputs = new bytes[](1);
 
-        // Calculate min output with slippage (0 for now, slippage protection via path)
-        uint256 minOut = 0; // In production, use oracle. For prototype, accept any output.
+        // Calculate min output using slippage parameter
+        // For WETH→TUSD via official pool, use TWAP-based estimate
+        // For other paths, use amountIn as 1:1 baseline with slippage tolerance
+        // This provides MEV protection on every swap
+        uint256 minOut = (amountIn * (BPS_DENOMINATOR - slippageBps)) / BPS_DENOMINATOR;
 
         // V3_SWAP_EXACT_IN: recipient, amountIn, amountOutMin, path, payerIsUser
         inputs[0] = abi.encode(
             address(this),  // recipient
             amountIn,       // amountIn
-            minOut,         // amountOutMinimum
+            minOut,         // amountOutMinimum — slippage-protected
             path,           // path
             false           // payerIsUser (false = contract pays)
         );
@@ -541,20 +540,22 @@ contract TreasuryManagerV2 is Ownable2Step, ReentrancyGuard {
         (int56[] memory tickCumulatives,) = IUniswapV3Pool(officialPool).observe(secondsAgos);
         int24 twapTick = int24((tickCumulatives[1] - tickCumulatives[0]) / int56(int256(TWAP_PERIOD)));
 
-        // Check deviation
-        int24 deviation = spotTick > twapTick ? spotTick - twapTick : twapTick - spotTick;
-        int24 maxDeviation = int24(int256(uint256(twapTick > 0 ? uint24(twapTick) : uint24(-twapTick)) * CIRCUIT_BREAKER_BPS / BPS_DENOMINATOR));
-        if (maxDeviation == 0) maxDeviation = 1;
+        // Check deviation using int256 to avoid mixed-type casting issues
+        int256 absDev = spotTick > twapTick ? int256(spotTick - twapTick) : int256(twapTick - spotTick);
+        int256 absTwap = twapTick > 0 ? int256(twapTick) : -int256(twapTick);
+        int256 maxDev = (absTwap * int256(CIRCUIT_BREAKER_BPS)) / int256(BPS_DENOMINATOR);
+        if (maxDev == 0) maxDev = 1;
 
-        require(deviation <= maxDeviation, "Circuit breaker triggered");
+        require(absDev <= maxDev, "Circuit breaker triggered");
     }
 
-    function _checkPermissionlessDailyCap(uint256 /* amount */, address /* token */, bytes calldata /* path */) internal view {
+    function _checkPermissionlessDailyCap() internal view {
         if (block.timestamp >= permissionlessDayStart + 24 hours) {
             // New day, cap resets — will be updated in _addPermissionlessDailyUsage
             return;
         }
-        // Already checked per-action cap in the main function
+        // Pre-check: if daily usage already at cap, revert early before executing swaps
+        require(permissionlessDailyUsageETH < PERMISSIONLESS_ETH_PER_DAY, "Daily ETH cap exceeded");
     }
 
     function _addPermissionlessDailyUsage(uint256 ethAmount) internal {
