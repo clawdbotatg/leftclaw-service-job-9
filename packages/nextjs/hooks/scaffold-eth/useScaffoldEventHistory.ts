@@ -129,8 +129,8 @@ export const useScaffoldEventHistory = <
     fromBlock !== undefined
       ? fromBlock
       : BigInt(
-          deployedContractData && "deployedOnBlock" in deployedContractData
-            ? deployedContractData.deployedOnBlock || 0
+          (deployedContractData as any) && "deployedOnBlock" in (deployedContractData as any)
+            ? (deployedContractData as any).deployedOnBlock || 0
             : 0,
         );
 
@@ -144,7 +144,7 @@ export const useScaffoldEventHistory = <
         fromBlock: fromBlockValue?.toString(),
         toBlock: toBlock?.toString(),
         chainId: selectedNetwork.id,
-        filters: JSON.stringify(filters, replacer),
+        filters: JSON.stringify(filters, replacer as (key: string, value: unknown) => unknown),
         blocksBatchSize: blocksBatchSize.toString(),
       },
     ],
