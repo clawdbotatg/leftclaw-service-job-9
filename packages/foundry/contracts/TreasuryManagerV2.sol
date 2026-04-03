@@ -20,7 +20,7 @@ contract TreasuryManagerV2 is Ownable2Step, ReentrancyGuard {
     // ─── Immutable Addresses ───
     address public constant WETH = 0x4200000000000000000000000000000000000006;
     address public constant USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
-    address public constant TUSD = 0x0C03Ce270B4826Ec62e7DD007f0B716068639F7B;
+    address public constant TUSD = 0x3d5e487B21E0569048c4D1A60E98C36e1B09DB07;
     address public constant UNIVERSAL_ROUTER = 0x6fF5693b99212Da76ad316178A184AB56D299b43;
     address public constant POOL_MANAGER = 0x498581fF718922c3f8e6A244956aF099B2652b2b;
     address public constant STAKING = 0x2a70a42BC0524aBCA9Bff59a51E7aAdB575DC89A;

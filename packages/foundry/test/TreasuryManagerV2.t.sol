@@ -21,7 +21,7 @@ contract TreasuryManagerV2Test is Test {
     // Constants from the contract
     address constant WETH = 0x4200000000000000000000000000000000000006;
     address constant USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
-    address constant TUSD = 0x0C03Ce270B4826Ec62e7DD007f0B716068639F7B;
+    address constant TUSD = 0x3d5e487B21E0569048c4D1A60E98C36e1B09DB07;
     address constant UNIVERSAL_ROUTER = 0x6fF5693b99212Da76ad316178A184AB56D299b43;
     address constant STAKING = 0x2a70a42BC0524aBCA9Bff59a51E7aAdB575DC89A;
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
